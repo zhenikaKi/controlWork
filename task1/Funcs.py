@@ -7,6 +7,8 @@ from JsonRepository import Repository
 class Funcs:
 
     __repository = Repository()
+    # Список команд для печати списка заметок
+    __printCmd = [consts.CMD_PRINT_MINI, consts.CMD_PRINT_FULL, consts.CMD_PRINT_SORT, consts.CMD_PRINT_SORT_DESC]
 
     @classmethod
     def loadData(cls):
@@ -21,7 +23,10 @@ class Funcs:
 {consts.CMD_EDIT} - Редактировать заметку (по id)
 {consts.CMD_DELETE} - Удалить заметку (по id)
 {consts.CMD_PRINT_MINI} - Вывести все заметки (кратко)
-{consts.CMD_PRINT_FULL} - Вывести все заметки (подробно)'''
+{consts.CMD_PRINT_FULL} - Вывести все заметки (подробно)
+{consts.CMD_PRINT_SORT} - Вывести все заметки с сортировкой по возрастанию
+{consts.CMD_PRINT_SORT_DESC} - Вывести все заметки с сортировкой по убыванию
+{consts.CMD_PRINT_NOTE} - Вывести заметку по id'''
         print(strHelp)
         cls.__blueText(f'{consts.CMD_EXIT} - Выход из приложения')
         print('-----------------------------------------')
@@ -40,8 +45,13 @@ class Funcs:
             cls.__addNoteDialog()
         elif cmd == consts.CMD_EDIT:
             cls.__editNoteDialog()
-        elif cmd == consts.CMD_PRINT_MINI or cmd == consts.CMD_PRINT_FULL:
-            cls.__printAllNotes(cmd == consts.CMD_PRINT_MINI)
+        elif cmd == consts.CMD_DELETE:
+            cls.__deleteNoteDialog()
+        elif cmd in cls.__printCmd:
+            sortDate = consts.SORT_ASC if cmd == consts.CMD_PRINT_SORT else consts.SORT_DESC if cmd == consts.CMD_PRINT_SORT_DESC else consts.SORT_DISABLE
+            cls.__printAllNotes(cmd == consts.CMD_PRINT_MINI, sortOnDate=sortDate)
+        elif cmd == consts.CMD_PRINT_NOTE:
+            cls.__printNoteDialog()
         else:
             cls.__redText(f'{cmd} - Неизвестная команда')
         return True
@@ -77,6 +87,7 @@ class Funcs:
         if note[consts.KEY_ID] == 0:
             return
         cls.__editNote(note)
+        cls.__greenText("Заметка добавлена")
 
     @classmethod
     def __editNote(cls, note):
@@ -126,6 +137,16 @@ class Funcs:
         cls.__greenText("Заметка обновлена")
 
     @classmethod
+    def __deleteNoteDialog(cls):
+        """ Запросить идентификатор заметки для удаления """
+        note = cls.__selectIdDialog("удаления")
+        if note[consts.KEY_ID] == 0:
+            return        
+
+        cls.__repository.deleteNote(note)
+        cls.__greenText("Заметка удалена")
+
+    @classmethod
     def __selectIdDialog(cls, oper):
         """
         Запросить идентификатор заметки.
@@ -150,12 +171,16 @@ class Funcs:
                 cls.__redText('Некорректный id')
 
     @classmethod
-    def __printAllNotes(cls, asMini=True, withLine=True):
+    def __printAllNotes(cls, asMini=True, withLine=True, sortOnDate=consts.SORT_DISABLE):
         """
         Показать все заметки.
 
         asMini - True - показывать заметки в кратком виде, false - показывать в подробном виде.
         withLine - True - показывать горизонтальные линии, false - не показывать.
+        sortOnDate - Сортировка заметок по дате: 
+          0 - не сортировать заметки
+          1 - сортировать заметки по убыванию
+          2 - сортировать по возрастанию
         """
         ID_SIZE = 5
         DATE_SIZE = 19
@@ -165,14 +190,44 @@ class Funcs:
         print(f'| {"id".ljust(ID_SIZE)} | {"Дата обновления".ljust(DATE_SIZE)} | Заголовок{"" if asMini else " / Текст"}')
         if withLine:
             print(line)
+        
+        # сортируем заметки, если нужно
+        if (sortOnDate == consts.SORT_ASC or sortOnDate == consts.SORT_DESC):
+            notes = sorted(cls.__repository.getAll(), key=lambda note: note[consts.KEY_UPDATE], reverse=sortOnDate == consts.SORT_DESC)
+        else:
+            notes = cls.__repository.getAll()
+
         # печатаем все заметки
-        for note in cls.__repository.getAll():
+        for note in notes:
             text = f'| {str(note[consts.KEY_ID]).rjust(ID_SIZE)} | {note[consts.KEY_UPDATE].rjust(DATE_SIZE)} | {note[consts.KEY_TITLE] }'
             print(text)
             if not asMini:
                 print(f'{lineFull}{note[consts.KEY_TEXT]}')
             if withLine:
                 print(line)
+
+    @classmethod
+    def __printNoteDialog(cls):
+        """ Запросить идентификатор заметки для ее отображения """
+        DATE_SIZE = 15
+        cls.__blueText(f'{consts.CMD_EXIT} - для выхода из режима отображения заметки')
+        while True:
+            try:
+                id = int(input('Введите id заметки: '))
+                if id == 0:
+                    return
+
+                note = cls.__repository.getNote(id)
+                if note is not None:
+                    print(f'{"Идентификатор".ljust(DATE_SIZE)}: {note[consts.KEY_ID]}')
+                    print(f'{"Дата обновления".ljust(DATE_SIZE)}: {note[consts.KEY_UPDATE]}')
+                    print(f'{"Заголовок".ljust(DATE_SIZE)}: {note[consts.KEY_TITLE]}')
+                    print(f'{"Текст".ljust(DATE_SIZE)}: {note[consts.KEY_TEXT]}')
+                else:
+                    cls.__redText(f'Не найдена заметка с идентификатором {id}')
+                break
+            except ValueError:
+                cls.__redText('Некорректный id')
 
     @classmethod
     def __redText(cls, text):

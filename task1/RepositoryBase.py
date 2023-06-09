@@ -43,3 +43,13 @@ class RepositoryBase:
         note - Обновленная заметка.
         """
         pass
+        pass
+
+    @classmethod
+    def deleteNote(cls, note):
+        """
+        Удалить заметку.
+
+        note - Заметка для удаления.
+        """
+        pass

@@ -46,14 +46,30 @@ class Repository(RepositoryBase):
 
     @classmethod
     def updateNote(cls, note):
+        position = cls.__getNotePosition(note)
+        if position >= 0:
+            cls.__notes[position] = note
+
+    @classmethod
+    def deleteNote(cls, note):
+        position = cls.__getNotePosition(note)
+        if position >= 0:
+            cls.__notes.remove(note)
+
+    @classmethod
+    def __getNotePosition(cls, note):     
+        """
+        Получить позицию заметки в списке всех заметок.
+
+        note - Заметка для поиска.
+        """   
         position = -1
         for ind in range(len(cls.__notes)):
             curNote = cls.__notes[ind]
             if curNote[consts.KEY_ID] == note[consts.KEY_ID]:
                 position = ind
                 break
-        if position >= 0:
-            cls.__notes[position] = note
+        return position
 
     @classmethod
     def __getNewID(cls):

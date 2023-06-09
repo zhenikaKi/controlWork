@@ -29,3 +29,9 @@ python note.py
 Заметка успешно сохранена
 Введите команду:
 ```
+
+### Запуск готового задания
+```bash
+cd controlWork/task1/
+python3 main.py
+```
