@@ -52,7 +52,8 @@ public class Presenter {
             case CMD_EXIT:
                 return true;
             case CMD_GET_TOY:
-                System.out.println(toyShop.getToy());
+                putToFile("Получение игрушки:");
+                putToFile(toyShop.getToy().toString());
                 break;
             case CMD_CHANGE_WEIGHT:
                 changeWeight();
@@ -95,7 +96,8 @@ public class Presenter {
 
     /** Напечатать данные по игрушкам */
     private void printToys() {
-        toyShop.getToysInfo().forEach(System.out::println);
+        putToFile("Данные по игрушкам в магазине:");
+        toyShop.getToysInfo().forEach(t -> putToFile(t.toString()));
     }
 
     /** Напечатать список команд и получить команду, которую ввел пользователь */
@@ -108,5 +110,20 @@ public class Presenter {
         System.out.println(CMD_ADD_TOY + " - добавить игрушку");
         System.out.print("Введите номер команды: ");
         return scanner.nextInt();
+    }
+
+    /**
+     * Записать данные в файл.
+     * @param text Строка для файла.
+     */
+    private void putToFile(String text) {
+        System.out.println(text);
+        try(FileWriter fileWriter = new FileWriter(FILE_NAME, true)) {
+            fileWriter.write(text + "\n");
+            fileWriter.flush();
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Возникла ошибка при работе с результирующим файлом", e);
+        }
     }
 }
